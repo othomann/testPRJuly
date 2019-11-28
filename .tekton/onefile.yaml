@@ -1,33 +1,75 @@
-# Task writes "some stuff" to a predefined path in the workspace git PipelineResource hi bog8
+# Task writes "some stuff" to a predefined path in the workspace git PipelineResource hi XinYi
 apiVersion: tekton.dev/v1alpha1
 kind: Task
 metadata:
-  name: export-vars
+  name: create-file
 spec:
+  inputs:
+    resources:
+    - name: workspace
+      type: git
+      targetPath: damnworkspace
+  outputs:
+    resources:
+    - name: workspace
+      type: git
   steps:
-  - name: export-var
+  - name: read-docs-old
     image: ubuntu
     command: ["/bin/bash"]
-    args: ['-c', 'export JOB="Job1"' ] # tests that targetpath works
-  - name: checkvars
+    args: ['-c', 'ls -la /workspace/damnworkspace/docs/README.md'] # tests that targetpath works
+  - name: write-new-stuff
     image: ubuntu
-    command: ['/bin/bash']
-    args: ['-c', 'echo $JOB']
+    command: ['bash']
+    args: ['-c', 'ln -s /workspace/damnworkspace /workspace/output/workspace && echo some stuff > /workspace/output/workspace/stuff']
+---
+# Reads a file from a predefined path in the workspace git PipelineResource
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: check-stuff-file-exists
+spec:
+  inputs:
+    resources:
+    - name: workspace
+      type: git
+      targetPath: newworkspace
+  steps:
+  - name: read
+    image: ubuntu
+    command: ["/bin/bash"]
+    args: ['-c', 'cat /workspace/newworkspace/stuff'] # tests that new targetpath and previous task output is dumped
 ---
 #The Output of the first Task (git resource) create-file is given as an `Input`
 # to the next `Task` check-stuff-file-exists using`from` clause.
+
 apiVersion: tekton.dev/v1alpha1
 kind: Pipeline
 metadata:
   name: output-pipeline
 spec:
+  resources:
+  - name: source-repo
+    type: git
   tasks:
-  - name: export-vars          # 1. create file
+  - name: first-create-file          # 1. create file
     taskRef:
-      name: export-var
-  - name: export-vars                 # 2.  check file exists
+      name: create-file
+    resources:
+      inputs:
+      - name: workspace
+        resource: source-repo
+      outputs:
+      - name: workspace
+        resource: source-repo
+  - name: then-check                 # 2.  check file exists
     taskRef:
-      name: checkvars
+      name: check-stuff-file-exists
+    resources:
+      inputs:
+      - name: workspace
+        resource: source-repo
+        from: [first-create-file]
 ---
 apiVersion: tekton.dev/v1alpha1
 kind: TriggerTemplate
