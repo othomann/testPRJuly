@@ -17,7 +17,7 @@ spec:
   - name: export-var
     image: ubuntu
     command: ["/bin/bash"]
-    args: ['-c', 'export JOB="This is the JOB value"'] # tests that targetpath works
+    args: ['-c', 'ls -laR && export JOB="This is the JOB value"'] # tests that targetpath works
   - name: check-var
     image: ubuntu
     command: ['bash']
