@@ -1,30 +1,50 @@
-# Task writes "some stuff" to a predefined path in the workspace git PipelineResource hi bog8
+# Task writes "some stuff" to a predefined path in the workspace git PipelineResource hi bog9
 apiVersion: tekton.dev/v1alpha1
 kind: Task
 metadata:
-  name: export-vars
+  name: check-export-variables
 spec:
+  inputs:
+    resources:
+    - name: workspace
+      type: git
+      targetPath: damnworkspace
+  outputs:
+    resources:
+    - name: workspace
+      type: git
   steps:
   - name: export-var
     image: ubuntu
     command: ["/bin/bash"]
-    args: ['-c', 'export JOB="Job1"' ] # tests that targetpath works
-  - name: checkvars
+    args: ['-c', 'export JOB="This is the JOB value"'] # tests that targetpath works
+  - name: check-var
     image: ubuntu
-    command: ['/bin/bash']
+    command: ['bash']
     args: ['-c', 'echo $JOB']
 ---
 #The Output of the first Task (git resource) create-file is given as an `Input`
 # to the next `Task` check-stuff-file-exists using`from` clause.
+
 apiVersion: tekton.dev/v1alpha1
 kind: Pipeline
 metadata:
   name: output-pipeline
 spec:
+  resources:
+  - name: source-repo
+    type: git
   tasks:
-  - name: check-variables
+  - name: check-environment-variable-export
     taskRef:
-      name: export-vars
+      name: check-export-variables
+    resources:
+      inputs:
+      - name: workspace
+        resource: source-repo
+      outputs:
+      - name: workspace
+        resource: source-repo
 ---
 apiVersion: tekton.dev/v1alpha1
 kind: TriggerTemplate
