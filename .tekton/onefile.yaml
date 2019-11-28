@@ -17,11 +17,11 @@ spec:
   - name: export-var
     image: ubuntu
     command: ["/bin/bash"]
-    args: ['-c', 'ls -laR && export JOB="This is the JOB value"'] # tests that targetpath works
+    args: ['-c', 'export JOB="This is the JOB value"'] # tests that targetpath works
   - name: check-var
     image: ubuntu
     command: ['bash']
-    args: ['-c', 'echo $JOB']
+    args: ['-c', 'echo "JOB=${JOB}"']
 ---
 #The Output of the first Task (git resource) create-file is given as an `Input`
 # to the next `Task` check-stuff-file-exists using`from` clause.
